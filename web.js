@@ -50,36 +50,39 @@ oauthCallback = function (request, response) {
 };
 
 runSAQL = async function (request,response){
-    let saqlReqBody = {
+    let saqlQry  =request.query.q;
+    if(!saqlQry){
+        response.send('Parameter q is required with the SAQL query to execute');
+    }else{
+        let saqlReqBody = {
+            "query": saqlQry
+        }
+        /*
+        q = load "0Fb460000008RzyCAE/0Fc460000009TdnCAE";q = group q by all;q = foreach q generate count() as 'count';q = limit q 2000;
+        
+       
+       saqlReqBody = {
         "query": "q = load \"0Fb460000008RzyCAE/0Fc460000009TdnCAE\";" +
                  "q = group q by all;q = foreach q generate count() as 'count';" +
                  "q = limit q 2000;"
-    }
-    
-    
-    let saqlUrl = request.session.instance_url+'/services/data/v45.0/wave/query';
-    let saqlResponse = await axios.post(saqlUrl,saqlReqBody,{
-        headers: {
-            "Authorization": "OAuth " + request.session.access_token
         }
-    });
-    response.send(saqlResponse.data);
+ */
+        let saqlUrl = request.session.instance_url+'/services/data/v45.0/wave/query';
+        try{
+            let saqlResponse = await axios.post(saqlUrl,saqlReqBody,{
+                headers: {
+                    "Authorization": "OAuth " + request.session.access_token
+                }
+            });
+            response.send(saqlResponse.data);
+        }catch(error){
+            response.send(JSON.stringify(error.response.data));
+        }
+    }
+
 }
 
-init = function (request, response) {
-    request.session.loginUrl=request.query.loginUrl;
-    var uri = oauth2.getAuthorizationUrl({
-        redirect_uri: callbackUrl,
-        client_id: consumerKey,
-        scope: 'full', // 'id api web refresh_token'
-        // You can change loginUrl to connect to sandbox or prerelease env.
-        //base_url: 'https://test.salesforce.com'
-        base_url: request.query.loginUrl
-    });
-    console.log(`Redirect URL : ${uri}`)
 
-    return response.redirect(uri);
-};
 
 app.get('/oauth/callback', oauthCallback);
 
@@ -95,5 +98,5 @@ var server = app.listen(app.get('port'), function() {
   var host = server.address().address;
   var port = server.address().port;
 
-  console.log('mData listening at http://%s:%s', host, port);
+  console.log('ExpressJS listening at http://%s:%s', host, port);
 });
