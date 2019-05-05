@@ -82,13 +82,27 @@ runSAQL = async function (request,response){
 
 }
 
+init = function (request, response) {
+    request.session.loginUrl=request.query.loginUrl;
+    var uri = oauth2.getAuthorizationUrl({
+        redirect_uri: callbackUrl,
+        client_id: consumerKey,
+        scope: 'full', // 'id api web refresh_token'
+        // You can change loginUrl to connect to sandbox or prerelease env.
+        //base_url: 'https://test.salesforce.com'
+        base_url: request.query.loginUrl
+    });
+    console.log(`Redirect URL : ${uri}`)
 
+    return response.redirect(uri);
+};
 
 app.get('/oauth/callback', oauthCallback);
 
 
 app.get("/",init );
 app.get("/saql",runSAQL );
+app.post("/saql",runSAQLPost );
 
 
 
@@ -98,5 +112,5 @@ var server = app.listen(app.get('port'), function() {
   var host = server.address().address;
   var port = server.address().port;
 
-  console.log('ExpressJS listening at http://%s:%s', host, port);
+  console.log('mData listening at http://%s:%s', host, port);
 });
