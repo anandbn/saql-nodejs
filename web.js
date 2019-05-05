@@ -102,8 +102,6 @@ app.get('/oauth/callback', oauthCallback);
 
 app.get("/",init );
 app.get("/saql",runSAQL );
-app.post("/saql",runSAQLPost );
-
 
 
 
