@@ -8,6 +8,7 @@ var callbackUrl = process.env.SF_CALLBACK_URL,
     consumerKey = process.env.SF_CLIENT_ID,
     consumerSecret = process.env.SF_CLIENT_SECRET;
 
+console.log(`SF_CLIENT_ID ${consumerKey} \n SF_CLIENT_SECRET=${consumerSecret} \n CALLBACK_URL=${callbackUrl}`)
 var app = express();
 
 // Which port to listen on
@@ -62,6 +63,8 @@ init = function (request, response) {
         //base_url: 'https://test.salesforce.com'
         base_url: request.query.loginUrl
     });
+    console.log(`Redirect URL : ${uri}`)
+
     return response.redirect(uri);
 };
 
