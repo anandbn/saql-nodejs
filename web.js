@@ -36,7 +36,7 @@ oauthCallback = function (request, response) {
         // You can change loginUrl to connect to sandbox or prerelease env.
         base_url: loginUrl
     }, function (error, payload) {
-        console.log('Payload:' + JSON.stringify(payload));
+        //console.log('Payload:' + JSON.stringify(payload));
         if (payload) {
             //console.log(JSON.stringify(payload,'\n',4))
             request.session.access_token=payload.access_token;
