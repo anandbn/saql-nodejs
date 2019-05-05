@@ -1,7 +1,7 @@
 require('dotenv').config();
 var express = require('express'),
     oauth2 = require('salesforce-oauth2'),
-    session = require('express-session'),
+    cookieSession = require('cookie-session'),
     axios = require('axios');
 
 var callbackUrl = process.env.SF_CALLBACK_URL,
@@ -16,7 +16,14 @@ app.set('port', process.env.PORT || 3000);
 
 
 //Middleware
-app.use(session({secret: "w585hJqIfL0GWMUbD1WboOuvsjG9Urv1h8cEv8XyFZBPYV582WnLKapj1TboI5gp8sy3hDC53mbDXYDjLrIEvBbsz3MDKmzdLZCw"}));
+app.use(
+    cookieSession({
+        name: 'session',
+        secret: "w585hJqIfL0GWMUbD1WboOuvsjG9Urv1h8cEv8XyFZBPYV582WnLKapj1TboI5gp8sy3hDC53mbDXYDjLrIEvBbsz3MDKmzdLZCw",
+        // Cookie Options
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      })
+);
 
 oauthCallback = function (request, response) {
     var authorizationCode = request.param('code');
@@ -28,30 +35,36 @@ oauthCallback = function (request, response) {
         code: authorizationCode,
         // You can change loginUrl to connect to sandbox or prerelease env.
         base_url: loginUrl
-    }, async function (error, payload) {
+    }, function (error, payload) {
         console.log('Payload:' + JSON.stringify(payload));
         if (payload) {
-            console.log(JSON.stringify(payload,'\n',4))
-            let saqlReqBody = {
-                "query": "q = load \"0Fb460000008RzyCAE/0Fc460000009TdnCAE\";" +
-                         "q = group q by all;q = foreach q generate count() as 'count';" +
-                         "q = limit q 2000;"
-            }
-            
-            
-            let saqlUrl = payload.instance_url+'/services/data/v45.0/wave/query';
-            let saqlResponse = await axios.post(saqlUrl,saqlReqBody,{
-                headers: {
-                    "Authorization": "OAuth " + payload.access_token
-                }
-            });
-            response.send(saqlResponse.data);
+            //console.log(JSON.stringify(payload,'\n',4))
+            request.session.access_token=payload.access_token;
+            request.session.instance_url=payload.instance_url;
+            response.send('Authentication completed !!! use /saql to execute the SAQL');
         } else {
             console.log('Empty Payload');
             response.send('Empty payload received. Try again !!!');
         }
     });
 };
+
+runSAQL = async function (request,response){
+    let saqlReqBody = {
+        "query": "q = load \"0Fb460000008RzyCAE/0Fc460000009TdnCAE\";" +
+                 "q = group q by all;q = foreach q generate count() as 'count';" +
+                 "q = limit q 2000;"
+    }
+    
+    
+    let saqlUrl = request.session.instance_url+'/services/data/v45.0/wave/query';
+    let saqlResponse = await axios.post(saqlUrl,saqlReqBody,{
+        headers: {
+            "Authorization": "OAuth " + request.session.access_token
+        }
+    });
+    response.send(saqlResponse.data);
+}
 
 init = function (request, response) {
     request.session.loginUrl=request.query.loginUrl;
@@ -72,6 +85,7 @@ app.get('/oauth/callback', oauthCallback);
 
 
 app.get("/",init );
+app.get("/saql",runSAQL );
 
 
 
