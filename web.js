@@ -2,7 +2,8 @@ require('dotenv').config();
 var express = require('express'),
     oauth2 = require('salesforce-oauth2'),
     cookieSession = require('cookie-session'),
-    axios = require('axios');
+    axios = require('axios'),
+    bodyParser = require('body-parser');
 
 var callbackUrl = process.env.SF_CALLBACK_URL,
     consumerKey = process.env.SF_CLIENT_ID,
@@ -16,6 +17,9 @@ app.set('port', process.env.PORT || 3000);
 
 
 //Middleware
+app.use(express.static('public'));
+app.use(bodyParser.urlencoded());
+
 app.use(
     cookieSession({
         name: 'session',
@@ -82,6 +86,31 @@ runSAQL = async function (request,response){
 
 }
 
+runSAQLPost = async function (request,response){
+    let saqlQry  =request.body.saqlQuery;
+    saqlQry = saqlQry.trim();
+    if(!saqlQry){
+        response.send('Parameter q is required with the SAQL query to execute');
+    }else{
+        let saqlReqBody = {
+            "query": saqlQry
+        }
+
+        let saqlUrl = request.session.instance_url+'/services/data/v45.0/wave/query';
+        try{
+            let saqlResponse = await axios.post(saqlUrl,saqlReqBody,{
+                headers: {
+                    "Authorization": "OAuth " + request.session.access_token
+                }
+            });
+            response.send(saqlResponse.data);
+        }catch(error){
+            response.send(JSON.stringify(error.response.data));
+        }
+    }
+
+}
+
 init = function (request, response) {
     request.session.loginUrl=request.query.loginUrl;
     var uri = oauth2.getAuthorizationUrl({
@@ -102,7 +131,7 @@ app.get('/oauth/callback', oauthCallback);
 
 app.get("/",init );
 app.get("/saql",runSAQL );
-
+app.post('/saql',runSAQLPost);
 
 
 // Start listening for HTTP requests

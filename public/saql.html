@@ -1,0 +1,17 @@
+<html>
+
+    <head>
+        <title>Submit SAQL Query</title>
+    </head>
+
+    <body>
+        <form method="POST" action="/saql">
+            <label>SAQL To Execute:</label><br/>
+            <textarea name="saqlQuery" rows="4" cols="50">
+                    q = load "0Fb460000008RzyCAE/0Fc460000009TdnCAE";q = group q by all;q = foreach q generate count() as 'count';q = limit q 2000;
+            </textarea></br>
+            <input type="submit" value="Submit SAQL"/>
+        </form>
+    </body>
+
+</html>
